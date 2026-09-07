@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Household Chores - History</title>
+</head>
+<body>
+    <h1>Chore History</h1>
+    <p><a href="{% url 'current_week' %}">Back to this week</a></p>
+    <table border="1" cellpadding="4">
+        <tr>
+            <th>Week</th>
+            <th>Person</th>
+            <th>Chore</th>
+            <th>Status</th>
+        </tr>
+        {% for assignment in assignments %}
+        <tr>
+            <td>{{ assignment.week_start }}</td>
+            <td>{{ assignment.person }}</td>
+            <td>{{ assignment.chore }}</td>
+            <td>
+                {% if assignment.completed %}
+                    Done ({{ assignment.completed_at }})
+                {% else %}
+                    Missed / pending
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
