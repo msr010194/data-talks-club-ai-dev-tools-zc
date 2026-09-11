@@ -1,7 +1,10 @@
 # Tennis Tournament Manager — Backlog
 
+> Project reset: previous implementation removed, rebuilding from scratch
+> with tech stack TBC.
+
 ## 1. Data Models
-- [x] `Player` model: name, rating, created date.
+- [ ] `Player` model: name, rating, created date.
 - [ ] `Tournament` model: name, date, location, surface.
 - [ ] `Match` model: tournament, round, player1, player2, winner, set scores,
       date (surface inherited from tournament).

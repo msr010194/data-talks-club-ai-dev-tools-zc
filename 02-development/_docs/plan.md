@@ -6,10 +6,13 @@ tournaments. Player and match data persist in a database, enabling
 rating-based seeding and historical performance analysis across tournaments.
 
 ## Tech Stack
-- **Backend**: Django
-- **Frontend**: Django templates (server-rendered)
-- **Database**: SQLite
-- **Auth**: None — single-user, local app for now
+- **Backend**: TBC
+- **Frontend**: TBC
+- **Database**: TBC
+- **Auth**: TBC
+
+Stack decisions will be made iteratively through conversation as the app is
+rebuilt from scratch.
 
 ## Core Entities
 - **Player**: name, rating (e.g., ELO-style), created date
