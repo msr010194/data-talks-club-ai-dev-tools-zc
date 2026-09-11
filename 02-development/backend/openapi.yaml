@@ -1,0 +1,347 @@
+openapi: 3.1.0
+info:
+  title: Tennis Tournament Manager API
+  version: 0.1.0
+  description: >
+    API for managing players, tournaments, and single-elimination brackets
+    for a single-organizer tennis tournament manager. Backed by an in-memory
+    mock store for now; will be swapped for a real database later.
+
+servers:
+  - url: http://localhost:8000
+
+paths:
+  /players:
+    get:
+      summary: List players
+      operationId: listPlayers
+      responses:
+        "200":
+          description: List of players
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Player"
+    post:
+      summary: Create a player
+      operationId: createPlayer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerCreate"
+      responses:
+        "201":
+          description: Player created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /players/{player_id}:
+    get:
+      summary: Get a player
+      operationId: getPlayer
+      parameters:
+        - $ref: "#/components/parameters/PlayerId"
+      responses:
+        "200":
+          description: Player found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /players/{player_id}/stats:
+    get:
+      summary: Get a player's historical stats
+      operationId: getPlayerStats
+      parameters:
+        - $ref: "#/components/parameters/PlayerId"
+      responses:
+        "200":
+          description: Player stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerStats"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /tournaments:
+    get:
+      summary: List tournaments
+      operationId: listTournaments
+      responses:
+        "200":
+          description: List of tournaments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tournament"
+    post:
+      summary: Create a tournament
+      operationId: createTournament
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TournamentCreate"
+      responses:
+        "201":
+          description: Tournament created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tournament"
+        "422":
+          description: Validation error (e.g. fewer than 2 players)
+
+  /tournaments/{tournament_id}:
+    get:
+      summary: Get a tournament
+      operationId: getTournament
+      parameters:
+        - $ref: "#/components/parameters/TournamentId"
+      responses:
+        "200":
+          description: Tournament found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tournament"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /tournaments/{tournament_id}/bracket:
+    get:
+      summary: Get the tournament bracket
+      operationId: getBracket
+      parameters:
+        - $ref: "#/components/parameters/TournamentId"
+      responses:
+        "200":
+          description: Bracket rounds
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bracket"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Bracket not generated yet
+    post:
+      summary: Generate the tournament bracket (seeded by rating, byes to top seeds)
+      operationId: generateBracket
+      parameters:
+        - $ref: "#/components/parameters/TournamentId"
+      responses:
+        "201":
+          description: Bracket generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bracket"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Bracket already generated
+
+  /matches/{match_id}/result:
+    post:
+      summary: Record a match result (winner + set scores)
+      operationId: recordMatchResult
+      parameters:
+        - $ref: "#/components/parameters/MatchId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MatchResultIn"
+      responses:
+        "200":
+          description: Match updated; winner advanced to next round if applicable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Match"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Invalid result (e.g. match already decided, unknown winner, or a bye)
+
+components:
+  parameters:
+    PlayerId:
+      name: player_id
+      in: path
+      required: true
+      schema:
+        type: integer
+    TournamentId:
+      name: tournament_id
+      in: path
+      required: true
+      schema:
+        type: integer
+    MatchId:
+      name: match_id
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  responses:
+    NotFound:
+      description: Resource not found
+
+  schemas:
+    PlayerCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        rating:
+          type: number
+          default: 1200.0
+
+    Player:
+      type: object
+      required: [id, name, rating, created]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        rating:
+          type: number
+        created:
+          type: string
+          format: date
+
+    RatingPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        rating:
+          type: number
+
+    PlayerStats:
+      type: object
+      properties:
+        wins:
+          type: integer
+        losses:
+          type: integer
+        win_ratio:
+          type: number
+        streak:
+          type: integer
+        streak_type:
+          type: string
+          enum: [W, L]
+          nullable: true
+        rating_history:
+          type: array
+          items:
+            $ref: "#/components/schemas/RatingPoint"
+
+    TournamentCreate:
+      type: object
+      required: [name, date, location, surface, player_ids]
+      properties:
+        name:
+          type: string
+        date:
+          type: string
+          format: date
+        location:
+          type: string
+        surface:
+          type: string
+          enum: [Hard, Clay, Grass, Indoor]
+        player_ids:
+          type: array
+          minItems: 2
+          items:
+            type: integer
+
+    Tournament:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        date:
+          type: string
+          format: date
+        location:
+          type: string
+        surface:
+          type: string
+        player_ids:
+          type: array
+          items:
+            type: integer
+        status:
+          type: string
+          enum: [setup, in_progress, complete]
+
+    Match:
+      type: object
+      properties:
+        id:
+          type: integer
+        tournament_id:
+          type: integer
+        round:
+          type: integer
+        player_a_id:
+          type: integer
+          nullable: true
+        player_b_id:
+          type: integer
+          nullable: true
+        is_bye:
+          type: boolean
+        winner_id:
+          type: integer
+          nullable: true
+        score:
+          type: string
+          nullable: true
+
+    Bracket:
+      type: object
+      properties:
+        tournament_id:
+          type: integer
+        rounds:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: "#/components/schemas/Match"
+
+    MatchResultIn:
+      type: object
+      required: [winner_id, score]
+      properties:
+        winner_id:
+          type: integer
+        score:
+          type: string
+          example: "6-4, 3-6, 6-2"
