@@ -7,7 +7,7 @@ rating-based seeding and historical performance analysis across tournaments.
 
 ## Tech Stack
 - **Backend**: TBC
-- **Frontend**: TBC
+- **Frontend**: Streamlit
 - **Database**: TBC
 - **Auth**: TBC
 
