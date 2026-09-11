@@ -7,8 +7,12 @@ st.set_page_config(page_title="Tennis Tournament Manager", page_icon="🎾", lay
 st.title("🎾 Tennis Tournament Manager")
 st.caption("Organizer dashboard — single-elimination tennis tournaments.")
 
-players = backend.list_players()
-tournaments = backend.list_tournaments()
+try:
+    players = backend.list_players()
+    tournaments = backend.list_tournaments()
+except backend.BackendError as exc:
+    st.error(f"Could not load data from the backend: {exc}")
+    st.stop()
 
 col1, col2, col3 = st.columns(3)
 col1.metric("Players", len(players))

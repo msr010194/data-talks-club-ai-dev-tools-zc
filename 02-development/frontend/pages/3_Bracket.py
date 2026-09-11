@@ -5,7 +5,11 @@ import backend_client as backend
 st.set_page_config(page_title="Bracket", page_icon="📊", layout="wide")
 st.title("📊 Bracket")
 
-tournaments = [t for t in backend.list_tournaments() if t["status"] != "setup"]
+try:
+    tournaments = [t for t in backend.list_tournaments() if t["status"] != "setup"]
+except backend.BackendError as exc:
+    st.error(f"Could not load data from the backend: {exc}")
+    st.stop()
 
 if not tournaments:
     st.info("No brackets yet — generate one from the **Tournaments** page.")
@@ -23,7 +27,11 @@ st.session_state["selected_tournament_id"] = tournament["id"]
 if tournament["status"] == "complete":
     st.success("🏆 Tournament complete!")
 
-bracket = backend.get_bracket(tournament["id"])
+try:
+    bracket = backend.get_bracket(tournament["id"])
+except backend.BackendError as exc:
+    st.error(f"Could not load bracket: {exc}")
+    st.stop()
 
 
 def player_label(player_id):
@@ -61,8 +69,12 @@ for round_idx, (col, round_matches) in enumerate(zip(columns, bracket)):
                                 st.error("Enter the set scores.")
                             else:
                                 winner_id = match["player_a_id"] if winner_choice == a_name else match["player_b_id"]
-                                backend.record_match_result(match["id"], winner_id, score.strip())
-                                st.rerun()
+                                try:
+                                    backend.record_match_result(match["id"], winner_id, score.strip())
+                                except backend.BackendError as exc:
+                                    st.error(f"Could not record result: {exc}")
+                                else:
+                                    st.rerun()
                 else:
                     st.markdown(f"{a_name}")
                     st.markdown(f"{b_name}")

@@ -6,10 +6,10 @@ tournaments. Player and match data persist in a database, enabling
 rating-based seeding and historical performance analysis across tournaments.
 
 ## Tech Stack
-- **Backend**: TBC
+- **Backend**: FastAPI
 - **Frontend**: Streamlit
-- **Database**: TBC
-- **Auth**: TBC
+- **Database**: SQLite (for development) / PostgreSQL (for production)
+- **Auth**: Organizer-only, simple token-based authentication
 
 Stack decisions will be made iteratively through conversation as the app is
 rebuilt from scratch.

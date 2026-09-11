@@ -14,11 +14,19 @@ with st.expander("➕ Add a new player", expanded=False):
             if not name.strip():
                 st.error("Please enter a player name.")
             else:
-                backend.create_player(name.strip(), rating)
-                st.success(f"Added {name.strip()}.")
-                st.rerun()
+                try:
+                    backend.create_player(name.strip(), rating)
+                except backend.BackendError as exc:
+                    st.error(f"Could not add player: {exc}")
+                else:
+                    st.success(f"Added {name.strip()}.")
+                    st.rerun()
 
-players = backend.list_players()
+try:
+    players = backend.list_players()
+except backend.BackendError as exc:
+    st.error(f"Could not load data from the backend: {exc}")
+    st.stop()
 
 st.subheader("Player database")
 if not players:
@@ -36,7 +44,11 @@ st.subheader("Player profile")
 if players:
     selected_name = st.selectbox("Select a player", [p["name"] for p in players])
     selected = next(p for p in players if p["name"] == selected_name)
-    stats = backend.get_player_stats(selected["id"])
+    try:
+        stats = backend.get_player_stats(selected["id"])
+    except backend.BackendError as exc:
+        st.error(f"Could not load player stats: {exc}")
+        st.stop()
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Rating", selected["rating"])

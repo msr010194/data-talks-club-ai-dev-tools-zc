@@ -5,9 +5,14 @@ import backend_client as backend
 st.set_page_config(page_title="Tournaments", page_icon="🏆", layout="wide")
 st.title("🏆 Tournaments")
 
-players = backend.list_players()
+try:
+    players = backend.list_players()
+    existing_tournaments = backend.list_tournaments()
+except backend.BackendError as exc:
+    st.error(f"Could not load data from the backend: {exc}")
+    st.stop()
 
-with st.expander("➕ Create a new tournament", expanded=not backend.list_tournaments()):
+with st.expander("➕ Create a new tournament", expanded=not existing_tournaments):
     if not players:
         st.warning("Add players first on the **Players** page.")
     else:
@@ -29,15 +34,19 @@ with st.expander("➕ Create a new tournament", expanded=not backend.list_tourna
                     st.error("Select at least 2 players.")
                 else:
                     player_ids = [p["id"] for p in players if p["name"] in selected_names]
-                    tournament = backend.create_tournament(
-                        name.strip(), tournament_date, location.strip(), surface, player_ids
-                    )
-                    st.session_state["selected_tournament_id"] = tournament["id"]
-                    st.success(f"Created '{tournament['name']}'. Generate the bracket below.")
-                    st.rerun()
+                    try:
+                        tournament = backend.create_tournament(
+                            name.strip(), tournament_date, location.strip(), surface, player_ids
+                        )
+                    except backend.BackendError as exc:
+                        st.error(f"Could not create tournament: {exc}")
+                    else:
+                        st.session_state["selected_tournament_id"] = tournament["id"]
+                        st.success(f"Created '{tournament['name']}'. Generate the bracket below.")
+                        st.rerun()
 
 st.subheader("All tournaments")
-tournaments = backend.list_tournaments()
+tournaments = existing_tournaments
 
 if not tournaments:
     st.info("No tournaments yet.")
@@ -51,10 +60,14 @@ else:
             with col2:
                 if tournament["status"] == "setup":
                     if st.button("Generate bracket", key=f"gen_{tournament['id']}"):
-                        backend.generate_bracket(tournament["id"])
-                        st.session_state["selected_tournament_id"] = tournament["id"]
-                        st.success("Bracket generated — open the Bracket page.")
-                        st.rerun()
+                        try:
+                            backend.generate_bracket(tournament["id"])
+                        except backend.BackendError as exc:
+                            st.error(f"Could not generate bracket: {exc}")
+                        else:
+                            st.session_state["selected_tournament_id"] = tournament["id"]
+                            st.success("Bracket generated — open the Bracket page.")
+                            st.rerun()
                 else:
                     if st.button("View bracket", key=f"view_{tournament['id']}"):
                         st.session_state["selected_tournament_id"] = tournament["id"]
